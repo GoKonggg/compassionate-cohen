@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, FC, ChangeEvent, FormEvent } from "react";
 import {
   PlayCircle,
   Upload,
@@ -11,8 +11,64 @@ import {
   ArrowRight,
 } from "lucide-react";
 
+// =================================================================
+// DEFINISI TIPE & INTERFACE
+// Mendefinisikan "bentuk" dari semua data untuk TypeScript
+// =================================================================
+
+interface Player {
+  id: number;
+  name: string;
+  sport: string;
+}
+
+interface Weakness {
+  point: string;
+  priority: "High" | "Medium" | "Low";
+}
+
+interface AIAnalysisResult {
+  overallSummary: string;
+  strengths: string[];
+  weaknesses: Weakness[];
+  drills: string[];
+}
+
+interface Stats {
+  [key: string]: number;
+}
+
+interface PerformanceHistoryItem {
+  date: string;
+  summary: string;
+  stats: Stats;
+  goodPoints: string[];
+  badPoints: Weakness[];
+  improvedPoints: string[];
+  coachNotes: string;
+}
+
+interface PlayerPerformanceHistory {
+  playerId: number;
+  history: PerformanceHistoryItem[];
+}
+
+// Tipe untuk props komponen
+interface OnboardingScreenProps {
+  onStart: () => void;
+}
+
+interface ModalProps {
+  message: string;
+  onClose: () => void;
+}
+
+// =================================================================
+// KOMPONEN REACT
+// =================================================================
+
 // Main application component that handles routing between screens
-function App() {
+const App: FC = () => {
   const [hasStarted, setHasStarted] = useState(false);
 
   // Conditional rendering to show either the Onboarding or the Dashboard
@@ -21,10 +77,10 @@ function App() {
   } else {
     return <OnboardingScreen onStart={() => setHasStarted(true)} />;
   }
-}
+};
 
 // Reusable modal component for in-app alerts
-const Modal = ({ message, onClose }) => {
+const Modal: FC<ModalProps> = ({ message, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full relative">
@@ -48,7 +104,7 @@ const Modal = ({ message, onClose }) => {
 };
 
 // Onboarding/Homepage component with a more engaging design
-const OnboardingScreen = ({ onStart }) => {
+const OnboardingScreen: FC<OnboardingScreenProps> = ({ onStart }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-800 flex items-center justify-center p-4 font-sans text-white">
       <div className="text-center max-w-xl">
@@ -77,29 +133,34 @@ const OnboardingScreen = ({ onStart }) => {
 };
 
 // Main Dashboard component with navigation and content sections
-const Dashboard = () => {
-  const [videoFile, setVideoFile] = useState(null);
+const Dashboard: FC = () => {
+  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [videoUrl, setVideoUrl] = useState("");
-  const [activeSection, setActiveSection] = useState("upload");
-  const [selectedPlayerId, setSelectedPlayerId] = useState(null);
-  const [selectedAnalysis, setSelectedAnalysis] = useState(null);
-  const [modalMessage, setModalMessage] = useState(null);
+  const [videoUrl, setVideoUrl] = useState<string>("");
+  const [activeSection, setActiveSection] = useState<
+    "upload" | "team_dashboard" | "performance"
+  >("upload");
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
+  const [selectedAnalysis, setSelectedAnalysis] =
+    useState<PerformanceHistoryItem | null>(null);
+  const [modalMessage, setModalMessage] = useState<string | null>(null);
   const [isPostAnalysisReview, setIsPostAnalysisReview] = useState(false);
-  const [currentSelectedPlayer, setCurrentSelectedPlayer] = useState(null);
-  const [coachNote, setCoachNote] = useState("");
-  const [correctionNotes, setCorrectionNotes] = useState("");
-  const [aiAnalysisResult, setAiAnalysisResult] = useState("");
+  const [currentSelectedPlayer, setCurrentSelectedPlayer] =
+    useState<Player | null>(null);
+  const [coachNote, setCoachNote] = useState<string>("");
+  const [correctionNotes, setCorrectionNotes] = useState<string>("");
+  const [aiAnalysisResult, setAiAnalysisResult] =
+    useState<AIAnalysisResult | null>(null);
 
   // Mock data for the Team Dashboard
-  const teamPlayers = [
+  const teamPlayers: Player[] = [
     { id: 1, name: "John Doe", sport: "Padel" },
     { id: 2, name: "Jane Smith", sport: "Padel" },
     { id: 3, name: "Mike Johnson", sport: "Padel" },
   ];
 
   // Mock data for a player's performance details
-  const performanceHistory = [
+  const performanceHistory: PlayerPerformanceHistory[] = [
     {
       playerId: 1,
       history: [
@@ -234,23 +295,24 @@ const Dashboard = () => {
   ];
 
   // Function to handle video file upload
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setVideoFile(file);
-      setVideoUrl(URL.createObjectURL(file));
+  const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const file = event.target.files[0];
+      if (file) {
+        setVideoFile(file);
+        setVideoUrl(URL.createObjectURL(file));
+      }
     }
   };
 
   // Function to handle the analysis process and pop-up
   const startAnalysis = () => {
     setIsLoading(true);
-    setVideoFile(null); // Clear video file to show only the analysis message
-    setVideoUrl(""); // Clear the video URL as well
+    setVideoFile(null);
+    setVideoUrl("");
     setTimeout(() => {
       setIsLoading(false);
-      // Simulasikan hasil analisis AI yang lebih terstruktur
-      const mockAiResult = {
+      const mockAiResult: AIAnalysisResult = {
         overallSummary:
           "Based on the simulated video, the athlete shows great potential with a solid offensive game. The primary area for improvement is defense, particularly in transitioning from a defensive position to an offensive one. The backhand technique is strong, but can be more consistent under pressure.",
         strengths: [
@@ -285,30 +347,31 @@ const Dashboard = () => {
       setModalMessage(
         "This is an MVP. Video analysis functionality is not yet implemented. You can now label the player and add your notes based on the AI analysis."
       );
-      // The modal's onClose handler will set isPostAnalysisReview to true
     }, 2000);
   };
 
   const handleModalClose = () => {
-    setModalMessage(null);
-    setIsPostAnalysisReview(true);
+    if (modalMessage === "Analysis saved successfully!") {
+      setModalMessage(null);
+      setCurrentSelectedPlayer(null);
+      setCoachNote("");
+      setCorrectionNotes("");
+      setIsPostAnalysisReview(false);
+      setVideoFile(null);
+      setVideoUrl("");
+      setActiveSection("upload");
+    } else {
+      setModalMessage(null);
+      setIsPostAnalysisReview(true);
+    }
   };
 
   const handleSaveAnalysis = () => {
-    // Simulate saving the analysis
-    // For this prototype, we just clear the states and show a confirmation
     setModalMessage("Analysis saved successfully!");
-    setCurrentSelectedPlayer(null);
-    setCoachNote("");
-    setCorrectionNotes("");
-    setIsPostAnalysisReview(false);
-    setVideoFile(null);
-    setVideoUrl("");
-    setActiveSection("upload");
   };
 
   // Content for the Post-Analysis Review section
-  const PostAnalysisReview = () => (
+  const PostAnalysisReview: FC = () => (
     <>
       <div className="flex items-center gap-2 mb-6">
         <button
@@ -332,11 +395,12 @@ const Dashboard = () => {
           </label>
           <select
             value={currentSelectedPlayer?.id || ""}
-            onChange={(e) =>
-              setCurrentSelectedPlayer(
-                teamPlayers.find((p) => p.id === parseInt(e.target.value))
-              )
-            }
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+              const player = teamPlayers.find(
+                (p) => p.id === parseInt(e.target.value)
+              );
+              setCurrentSelectedPlayer(player || null);
+            }}
             className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="" disabled>
@@ -349,55 +413,59 @@ const Dashboard = () => {
             ))}
           </select>
         </div>
-        <div className="p-3 bg-gray-100 rounded-md">
-          <h3 className="font-semibold text-gray-700 mb-2">
-            AI Analysis Result:
-          </h3>
-          <p className="text-sm text-gray-600 whitespace-pre-wrap font-bold mb-2">
-            Overall Summary:
-          </p>
-          <p className="text-sm text-gray-600 mb-4">
-            {aiAnalysisResult.overallSummary}
-          </p>
+        {aiAnalysisResult && (
+          <div className="p-3 bg-gray-100 rounded-md">
+            <h3 className="font-semibold text-gray-700 mb-2">
+              AI Analysis Result:
+            </h3>
+            <p className="text-sm text-gray-600 whitespace-pre-wrap font-bold mb-2">
+              Overall Summary:
+            </p>
+            <p className="text-sm text-gray-600 mb-4">
+              {aiAnalysisResult.overallSummary}
+            </p>
 
-          <p className="font-semibold text-green-600 flex items-center gap-1">
-            <CheckCircle size={16} /> Strengths:
-          </p>
-          <ul className="list-disc list-inside text-sm text-gray-600 ml-5 mb-2">
-            {aiAnalysisResult.strengths.map((point, i) => (
-              <li key={i}>{point}</li>
-            ))}
-          </ul>
+            <p className="font-semibold text-green-600 flex items-center gap-1">
+              <CheckCircle size={16} /> Strengths:
+            </p>
+            <ul className="list-disc list-inside text-sm text-gray-600 ml-5 mb-2">
+              {aiAnalysisResult.strengths.map((point, i) => (
+                <li key={i}>{point}</li>
+              ))}
+            </ul>
 
-          <p className="font-semibold text-red-600 flex items-center gap-1">
-            <X size={16} /> Areas for Improvement:
-          </p>
-          <ul className="list-disc list-inside text-sm text-gray-600 ml-5 mb-2">
-            {aiAnalysisResult.weaknesses.map((point, i) => (
-              <li key={i}>
-                {point.point} ({point.priority} priority)
-              </li>
-            ))}
-          </ul>
+            <p className="font-semibold text-red-600 flex items-center gap-1">
+              <X size={16} /> Areas for Improvement:
+            </p>
+            <ul className="list-disc list-inside text-sm text-gray-600 ml-5 mb-2">
+              {aiAnalysisResult.weaknesses.map((point, i) => (
+                <li key={i}>
+                  {point.point} ({point.priority} priority)
+                </li>
+              ))}
+            </ul>
 
-          <p className="font-semibold text-blue-600 flex items-center gap-1">
-            <CheckCircle size={16} /> Recommended Drills:
-          </p>
-          <ul className="list-disc list-inside text-sm text-gray-600 ml-5">
-            {aiAnalysisResult.drills.map((drill, i) => (
-              <li key={i}>{drill}</li>
-            ))}
-          </ul>
-        </div>
+            <p className="font-semibold text-blue-600 flex items-center gap-1">
+              <CheckCircle size={16} /> Recommended Drills:
+            </p>
+            <ul className="list-disc list-inside text-sm text-gray-600 ml-5">
+              {aiAnalysisResult.drills.map((drill, i) => (
+                <li key={i}>{drill}</li>
+              ))}
+            </ul>
+          </div>
+        )}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Coach's Notes:
           </label>
           <textarea
             value={coachNote}
-            onChange={(e) => setCoachNote(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+              setCoachNote(e.target.value)
+            }
             placeholder="Add your personal notes here..."
-            rows="4"
+            rows={4}
             className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           ></textarea>
         </div>
@@ -407,9 +475,11 @@ const Dashboard = () => {
           </label>
           <textarea
             value={correctionNotes}
-            onChange={(e) => setCorrectionNotes(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+              setCorrectionNotes(e.target.value)
+            }
             placeholder="E.g., Based on the AI, the forehand needs more wrist action."
-            rows="4"
+            rows={4}
             className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           ></textarea>
         </div>
@@ -426,7 +496,7 @@ const Dashboard = () => {
   );
 
   // Content for the Upload section
-  const UploadSection = () => (
+  const UploadSection: FC = () => (
     <>
       <div className="text-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Upload Video</h1>
@@ -493,7 +563,7 @@ const Dashboard = () => {
   );
 
   // Content for the Team Dashboard section
-  const TeamDashboardSection = () => (
+  const TeamDashboardSection: FC = () => (
     <>
       <div className="text-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Team Dashboard</h1>
@@ -534,7 +604,7 @@ const Dashboard = () => {
   );
 
   // Content for the Player Performance section
-  const PerformanceSection = () => {
+  const PerformanceSection: FC = () => {
     const player = teamPlayers.find((p) => p.id === selectedPlayerId);
     const playerHistory = performanceHistory.find(
       (h) => h.playerId === selectedPlayerId
@@ -548,7 +618,7 @@ const Dashboard = () => {
       ) {
         setSelectedAnalysis(playerHistory.history[0]);
       }
-    }, [selectedPlayerId, playerHistory, selectedAnalysis]);
+    }, [playerHistory, selectedAnalysis]);
 
     if (!player || !playerHistory) {
       return (
@@ -567,7 +637,6 @@ const Dashboard = () => {
       );
     }
 
-    // Padel performance stats for radar chart
     const stats = selectedAnalysis ? selectedAnalysis.stats : {};
     const statLabels = Object.keys(stats);
     const statValues = Object.values(stats);
@@ -576,15 +645,14 @@ const Dashboard = () => {
 
     const points = statValues
       .map((value, i) => {
-        const radius = (value / 100) * 40; // Scale value to fit chart size
+        const radius = (value / 100) * 40;
         const x = 50 + radius * Math.cos(i * angle - Math.PI / 2);
         const y = 50 + radius * Math.sin(i * angle - Math.PI / 2);
         return `${x},${y}`;
       })
       .join(" ");
 
-    // Calculate the length of the polygon path for animation
-    const pathLength = 100; // A reasonable estimate for a simple polygon
+    const pathLength = 100;
 
     const statGrid = Array.from({ length: numStats }, (_, i) => {
       const x = 50 + 40 * Math.cos(i * angle - Math.PI / 2);
@@ -592,30 +660,30 @@ const Dashboard = () => {
       return `${x},${y}`;
     }).join(" ");
 
-    const RadarChart = () => (
+    const RadarChart: FC = () => (
       <svg className="w-full h-full" viewBox="0 0 100 100">
         <style>
           {`
-            @keyframes draw {
-              to {
-                stroke-dashoffset: 0;
+              @keyframes draw {
+                to {
+                  stroke-dashoffset: 0;
+                }
               }
-            }
-            @keyframes fadeIn {
-              to {
-                opacity: 1;
+              @keyframes fadeIn {
+                to {
+                  opacity: 1;
+                }
               }
-            }
-            .animate-draw {
-              stroke-dasharray: ${pathLength};
-              stroke-dashoffset: ${pathLength};
-              animation: draw 2s ease-out forwards;
-            }
-            .animate-fill {
-              opacity: 0;
-              animation: fadeIn 1s ease-in forwards 2s; /* Starts after draw animation */
-            }
-          `}
+              .animate-draw {
+                stroke-dasharray: ${pathLength};
+                stroke-dashoffset: ${pathLength};
+                animation: draw 2s ease-out forwards;
+              }
+              .animate-fill {
+                opacity: 0;
+                animation: fadeIn 1s ease-in forwards 2s; /* Starts after draw animation */
+              }
+            `}
         </style>
         <polygon points={statGrid} stroke="#ccc" fill="none" />
         {statValues.map((_, i) => (
@@ -682,11 +750,11 @@ const Dashboard = () => {
                 </label>
                 <select
                   value={selectedAnalysis?.summary || ""}
-                  onChange={(e) => {
+                  onChange={(e: ChangeEvent<HTMLSelectElement>) => {
                     const newAnalysis = playerHistory.history.find(
                       (a) => a.summary === e.target.value
                     );
-                    setSelectedAnalysis(newAnalysis);
+                    setSelectedAnalysis(newAnalysis || null);
                   }}
                   className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-blue-500 focus:border-blue-500"
                 >
@@ -713,7 +781,6 @@ const Dashboard = () => {
                   </span>
                 </div>
 
-                {/* Animated Performance Diagram */}
                 <div className="mb-4">
                   <p className="font-semibold text-gray-700 mb-2">
                     Performance Chart:
@@ -723,7 +790,6 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* Display Statistics */}
                 <div className="mb-4">
                   <p className="font-semibold text-gray-700 mb-2">
                     Statistics:
@@ -742,7 +808,6 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* Good Points */}
                 <div className="mb-4">
                   <p className="font-semibold text-green-600 flex items-center gap-1">
                     <CheckCircle size={16} /> Good Points:
@@ -754,7 +819,6 @@ const Dashboard = () => {
                   </ul>
                 </div>
 
-                {/* Bad Points (Prioritized) */}
                 <div className="mb-4">
                   <p className="font-semibold text-red-600 flex items-center gap-1">
                     <X size={16} /> Areas for Improvement:
@@ -785,7 +849,6 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* Improved Points */}
                 <div>
                   <p className="font-semibold text-blue-600 flex items-center gap-1">
                     <CheckCircle size={16} /> Improved Points:
@@ -797,7 +860,6 @@ const Dashboard = () => {
                   </ul>
                 </div>
 
-                {/* Coach's Notes */}
                 {selectedAnalysis.coachNotes && (
                   <div className="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded-md">
                     <p className="font-semibold text-yellow-700">
@@ -816,7 +878,6 @@ const Dashboard = () => {
     );
   };
 
-  // Renders the content based on the active section
   const renderContent = () => {
     switch (activeSection) {
       case "upload":
@@ -836,14 +897,11 @@ const Dashboard = () => {
 
   return (
     <div className="bg-gray-200 min-h-screen flex items-center justify-center p-4">
-      {/* Phone Frame */}
       <div className="relative w-full max-w-sm h-[700px] bg-white rounded-[40px] shadow-[0_20px_50px_rgba(0,0,0,0.2)] overflow-hidden flex flex-col">
-        {/* Main Content Area */}
         <div className="flex-1 p-6 overflow-y-auto font-sans">
           {renderContent()}
         </div>
 
-        {/* Navigation Bar at the bottom */}
         <nav className="flex justify-around bg-white border-t border-gray-200 p-2 z-10">
           <button
             onClick={() => {
